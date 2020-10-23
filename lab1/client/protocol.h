@@ -28,13 +28,13 @@ typedef struct chat_packet
 	int msg_len;
 
 	// ÏûÏ¢
-	char *msg;
+	const char *msg;
 	
 }chat_packet;
 
 
 // ·â°ü
-inline chat_packet * make_packet(byte code, int len, char *msg)
+inline chat_packet * make_packet(const byte code, int len, const char *msg)
 {
 	chat_packet *packet = new chat_packet;
 	packet->state_code = code;
