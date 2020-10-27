@@ -1,23 +1,18 @@
 #pragma once
+#include <malloc.h>
 
 /* 聊天协议 CCP(Chat Control Protocol)
  *
  * 状态码		功能                客户端指令
- * 010000		注册名字				register <nick_name>
- * 010001		发送消息				send <group_id> <message>
- * 010010		列出在线的群			list
- * 010011		加入某个群			join <group_id>
- * 010100		创建一个群			create <group_name>
- * 010101		设置群为限制加入		limit
- * 010110		退出某个群聊			quit <group_id> 
- * 010111		退出					exit
+ * 00000001		注册名字				register <nick_name>
+ * 00000010		发送消息				send <group_id> <message>
+ * 00000100		列出在线的群			list
+ * 00001000		加入某个群			join <group_id>
+ * 00010000		创建一个群			create <group_name>
+ * 00100000		设置群为限制加入		limit
+ * 01000000		退出某个群聊			quit <group_id> 
+ * 10000000		退出					exit
  * 
- * 
- * 标志		客户端		服务端
- * 01		开始	发送 | 准备接受
- * 11		正在发送 | 接受成功
- * 10		发送结束 | 接受完毕 
- * 00		一次性指令
 */
 typedef struct chat_packet
 {
@@ -25,20 +20,19 @@ typedef struct chat_packet
 	byte state_code;
 
 	// 消息长度
-	int msg_len;
+	byte msg_len;
 
 	// 消息
-	const char *msg;
-	
+	char msg[0];
 }chat_packet;
 
 
 // 封包
 inline chat_packet * make_packet(const byte code, int len, const char *msg)
 {
-	chat_packet *packet = new chat_packet;
+	chat_packet *packet = static_cast<chat_packet*>(malloc(sizeof(chat_packet) + len + 1));
 	packet->state_code = code;
-	packet->msg_len = len;
-	packet->msg = msg;
+	packet->msg_len = static_cast<byte>(len);
+	strcpy_s(packet->msg, len + 1, msg);
 	return packet;
 }
