@@ -9,7 +9,7 @@
  * 00000100		列出在线的群			list
  * 00001000		加入某个群			join <group_id>
  * 00010000		创建一个群			create <group_name>
- * 00100000		设置群为限制加入		limit
+ * 00100000		设置群为限制加入		limit <group_id>
  * 01000000		退出某个群聊			quit <group_id> 
  * 10000000		退出					exit
  * 
