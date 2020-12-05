@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include <vector>
 #include <string>
+#include "protocol.h"
 
 #pragma comment(lib,"ws2_32.lib")
 
@@ -40,7 +41,8 @@ int main()
 
 	while(1)
 	{
-		char recvdata[80];
+		char recvdata[80] = {0};
+		packet * mypacket = nullptr;
 		int len=sizeof(addr);
 		const char *s2cData="hello,client,this is the server!\n";
 	    //recvfrom( SOCKET s, char FAR* buf, int len, int flags,struct sockaddr FAR* from, int FAR* fromlen);
@@ -55,9 +57,18 @@ int main()
 		int recvnum=recvfrom(recv_Socket,recvdata,80,0,(struct sockaddr *)&addr,&len);
 		if(recvnum>0)
 		{
-			//printf("成功收到数据\n");
-			recvdata[recvnum]='\0';//或是0x00;
-			printf("从客户端成功收到数据为:\n%s\n",recvdata);
+			mypacket = (packet *)recvdata;
+			if(check_packet(mypacket))
+			{
+				cout << "校验成功" << endl;
+				for(int i = 0; i < mypacket->size; i ++)
+					cout << *(mypacket->data + i);
+				cout << endl;
+			}
+			else
+			{
+				cout << "校验失败" << endl;
+			}
 		}
 		//服务器端收到数据以后，要客户端回送响应 "hello，client,this is server!"
 		sendto(recv_Socket,s2cData,strlen(s2cData),0,(struct sockaddr *)&addr,sizeof(addr));

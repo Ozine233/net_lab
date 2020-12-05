@@ -6,6 +6,7 @@
 #include <Windows.h>
 #include <vector>
 #include <string>
+#include "protocol.h"
 
 #pragma comment(lib,"ws2_32.lib")
 
@@ -40,13 +41,13 @@ int main()
 	// }
 
 	// sendto
-	char buf[80];
-	
-	sprintf(buf,"data packet with ID 1\n");
+	char test[] = "this is a test!";
+	cout << sizeof(unsigned short) << endl;
+	auto packet = make_packet(0,1,0,strlen(test),0,test);
 	
 	//目地机的IP地址和端口号信息
-	sendto(send_Socket, buf,strlen(buf),0,(struct sockaddr *)&addr,sizeof(addr));
-	printf("本机往服务器端发送的数据为:\n%s\n",buf);
+	sendto(send_Socket, (char *)packet,9 + packet->size,0,(struct sockaddr *)&addr,sizeof(addr));
+	
 	while(1)
 	{
 		char recvstr[80];
