@@ -120,6 +120,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="protocol.h" />
+    <ClInclude Include="socket.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\lab3\任务1测试文件\1.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
