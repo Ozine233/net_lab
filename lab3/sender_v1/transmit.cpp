@@ -242,7 +242,7 @@ void transmit::on_runV2(QString sendIp, unsigned int sendPort, QString recvIp, u
 			sendBuffer.push(s_packet);
 			// 发送数据包
 			sendto(send_socket, (char *)s_packet, sizeof(packet) + s_packet->size + 1, 0, (struct sockaddr *)aim_addr, sizeof(*aim_addr));
-			emit infoReady(tr("[SEND]--> PSH = 1 seq = ") + QString::number(LastSend), LastSend);
+			emit infoReady(tr("[SEND]--> PSH = 1 seq = ") + QString::number(LastSend), LastAck);
 			LastSend += s_packet->size;
 		}
 
@@ -252,17 +252,23 @@ void transmit::on_runV2(QString sendIp, unsigned int sendPort, QString recvIp, u
 		{
 			if (recvfrom(send_socket, (char *)r_packet, MAX_BUF, 0, (sockaddr *)aim_addr, &len) > 0)
 			{
-				emit infoReady(tr("[RECV]<-- ACK = ") + QString::number(r_packet->seq), LastSend);
-				if (r_packet->seq > LastAck && r_packet->seq < LastSend)
+				emit infoReady(tr("[RECV]<-- ACK = ") + QString::number(r_packet->seq), LastAck);
+				if (r_packet->seq > LastAck && r_packet->seq <= (LastSend + sendBuffer.back()->size))
 				{
-					unsigned int n = (r_packet->seq - LastAck) / MSS;
-					while (n --)
+					//unsigned int n = (r_packet->seq - LastAck) / MSS;
+					//while (n --)
+					//{
+					//	packet *free_packet = sendBuffer.front();
+					//	sendBuffer.pop();
+					//	free(free_packet);
+					//}
+					while (LastAck != r_packet->seq)
 					{
 						packet *free_packet = sendBuffer.front();
 						sendBuffer.pop();
+						LastAck += free_packet->size;
 						free(free_packet);
 					}
-					LastAck = r_packet->seq;
 					break;
 				}
 			}
@@ -277,7 +283,7 @@ void transmit::on_runV2(QString sendIp, unsigned int sendPort, QString recvIp, u
 		{
 			packet * tmp_packet = sendBuffer.front();
 			sendto(send_socket, (char *)tmp_packet, sizeof(packet) + tmp_packet->size + 1, 0, (struct sockaddr *)aim_addr, sizeof(*aim_addr));
-			emit infoReady(tr("[SEND]--> PSH = 1 seq = ") + QString::number(base_ACK), base_ACK);
+			emit infoReady(tr("[SEND]--> PSH = 1 seq = ") + QString::number(base_ACK), LastAck);
 			base_ACK += tmp_packet->size;
 			sendBuffer.pop();
 			sendBuffer.push(tmp_packet);
@@ -294,7 +300,7 @@ void transmit::on_runV2(QString sendIp, unsigned int sendPort, QString recvIp, u
 		{
 			packet * tmp_packet = sendBuffer.front();
 			sendto(send_socket, (char *)tmp_packet, sizeof(packet) + tmp_packet->size + 1, 0, (struct sockaddr *)aim_addr, sizeof(*aim_addr));
-			emit infoReady(tr("[SEND]--> PSH = 1 seq = ") + QString::number(base_ACK), base_ACK);
+			emit infoReady(tr("[SEND]--> PSH = 1 seq = ") + QString::number(base_ACK), LastAck);
 			base_ACK += tmp_packet->size;
 			sendBuffer.pop();
 			sendBuffer.push(tmp_packet);
@@ -305,17 +311,16 @@ void transmit::on_runV2(QString sendIp, unsigned int sendPort, QString recvIp, u
 		{
 			if (recvfrom(send_socket, (char *)r_packet, MAX_BUF, 0, (sockaddr *)aim_addr, &len) > 0)
 			{
-				emit infoReady(tr("[RECV]<-- ACK = ") + QString::number(r_packet->seq), LastSend);
-				if (r_packet->seq > LastAck && r_packet->seq < LastSend)
+				emit infoReady(tr("[RECV]<-- ACK = ") + QString::number(r_packet->seq), LastAck);
+				if (r_packet->seq > LastAck && r_packet->seq <= (LastSend + sendBuffer.back()->size))
 				{
-					unsigned int n = (r_packet->seq - LastAck) / MSS;
-					while (n --)
+					while (LastAck != r_packet->seq)
 					{
 						packet *free_packet = sendBuffer.front();
 						sendBuffer.pop();
+						LastAck += free_packet->size;
 						free(free_packet);
 					}
-					LastAck = r_packet->seq;
 					break;
 				}
 			}
@@ -335,7 +340,7 @@ void transmit::on_runV2(QString sendIp, unsigned int sendPort, QString recvIp, u
 		emit infoReady(tr("[SEND] FIN = 1 seq = ") + QString::number(LastAck), LastAck);
 		if (recvfrom(send_socket, (char *)r_packet, MAX_BUF, 0, (sockaddr *)aim_addr, &len) > 0)
 		{
-			emit infoReady(tr("[RECV] ACK = ") + QString::number(r_packet->seq), r_packet->seq);
+			emit infoReady(tr("[RECV] ACK = ") + QString::number(r_packet->seq), LastAck);
 			if (r_packet->seq == LastAck + 1)
 			{
 				free(s_packet);

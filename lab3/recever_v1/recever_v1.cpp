@@ -28,7 +28,8 @@ recever_v1::~recever_v1()
 void recever_v1::on_finished()
 {
 	QMessageBox::information(NULL, tr("Info"), tr("Transmit Finished "));
-	ui.bindButton->setEnabled(true);
+	ui.waitButton->setEnabled(true);
+	ui.windowButton->setEnabled(true);
 }
 
 void recever_v1::startWait()
@@ -43,7 +44,8 @@ void recever_v1::startWindow()
 
 void recever_v1::on_waitButton_clicked()
 {
-	ui.bindButton->setDisabled(true);
+	ui.waitButton->setDisabled(true);
+	ui.windowButton->setDisabled(true);
 
 	ip = ui.ip->text();
 	port = ui.port->text().toShort();
@@ -53,7 +55,8 @@ void recever_v1::on_waitButton_clicked()
 
 void recever_v1::on_windowButton_clicked()
 {
-	ui.bindButton->setDisabled(true);
+	ui.waitButton->setDisabled(true);
+	ui.windowButton->setDisabled(true);
 
 	ip = ui.ip->text();
 	port = ui.port->text().toShort();

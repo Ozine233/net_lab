@@ -2,6 +2,10 @@
 #include <QDebug>
 #include <QThread>
 #include <QMessageBox>
+#include <vector>
+#include <algorithm>
+#include <queue>
+#include <utility>
 
 transmit::transmit(QObject *parent /* = nullptr */)
 {
@@ -58,9 +62,8 @@ void transmit::on_run1(QString recvIp, unsigned int recvPort)
 	// 		}
 	// 	}
 
-	SOCKET recv_socket = NULL;
 	SOCKADDR_IN *addr = get_addr(recvIp.toStdString(), recvPort);
-	recv_socket = get_socket(addr);
+	SOCKET recv_socket = get_socket(addr);
 
 	packet * s_packet = make_packet(0, 0, 0, 0, 0, NULL);
 	unsigned int ACK = 0;
@@ -69,125 +72,62 @@ void transmit::on_run1(QString recvIp, unsigned int recvPort)
 	// 	QFile file;
 	// 	QDataStream file_out;
 
+	packet * r_packet = (packet *)malloc(MAX_BUF);
+	int len = sizeof(*addr);
 	while (1)
 	{
-		packet * r_packet = (packet *)malloc(MAX_BUF);
-		int len = sizeof(*addr);
-
 		if ((recvfrom(recv_socket, (char *)r_packet, MAX_BUF, 0, (struct sockaddr *)addr, &len)) > 0)
 		{
 			// 校验和
 			if (check_packet(r_packet))
 			{
-				switch (r_packet->OPT)
+				// 建立连接 并且建立文件
+				if (1 == r_packet->SYN)
 				{
-					// V1.0
-					case 1:
-						// 建立连接 并且建立文件
-						if (1 == r_packet->SYN)
-						{
-							if (0 == ACK)
-							{
-								ACK = r_packet->seq + 1;
-							}
-							else if (r_packet->seq == ACK)
-							{
-								std::string filename;
-								for (int i = 0; i < r_packet->size; i ++)
-									filename += (*(r_packet->data + i));
-								emit startWrite(QString::fromStdString(filename));
-								//file.setFileName(QString::fromStdString(filename));
-								//file.open(QIODevice::WriteOnly);
-								//file_out.setDevice(&file);
-								ACK += r_packet->size;
-							}
-						}
+					if (0 == ACK)
+					{
+						ACK = r_packet->seq + 1;
+					}
+					else if (r_packet->seq == ACK)
+					{
+						std::string filename;
+						for (int i = 0; i < r_packet->size; i ++)
+							filename += (*(r_packet->data + i));
+						emit startWrite(QString::fromStdString(filename));
+						//file.setFileName(QString::fromStdString(filename));
+						//file.open(QIODevice::WriteOnly);
+						//file_out.setDevice(&file);
+						ACK += r_packet->size;
+					}
+				}
 
-						else if (1 == r_packet->PSH)
-						{
-							if (r_packet->seq == ACK)
-							{
-								m_eruptWrite->push_packet(r_packet);
-								//file_out.writeRawData(r_packet->data, r_packet->size);
-								//file.flush();
-								ACK += r_packet->size;
-							}
-						}
+				else if (1 == r_packet->FIN)
+				{
+					s_packet->seq = ACK + 1;
+					for (int i = 0; i < 5; i ++)
+					{
+						sendto(recv_socket, (char *)s_packet, sizeof(packet) + s_packet->size + 1, 0, (struct sockaddr *)addr, sizeof(*addr));
+					}
 
-						else if (1 == r_packet->FIN)
-						{
-							s_packet->seq = ACK + 1;
-							for (int i = 0; i < 5; i ++)
-							{
-								sendto(recv_socket, (char *)s_packet, sizeof(packet) + s_packet->size + 1, 0, (struct sockaddr *)addr, sizeof(*addr));
-							}
+					while (!m_eruptWrite->is_finishsed()) {}
+					m_eruptWrite->set_quit();
+					del_socket(recv_socket);
+					//net_close();
 
-							while (!m_eruptWrite->is_finishsed()) {}
-							m_eruptWrite->set_quit();
-							del_socket(recv_socket);
-							//net_close();
+					emit finished();
+					return;
+				}
 
-							emit finished();
-							return;
-						}
-
-						break;
-
-						// V2.0
-					case 2:
-						// 建立连接 并且建立文件
-						if (1 == r_packet->SYN)
-						{
-							if (0 == ACK)
-							{
-								ACK = r_packet->seq + 1;
-							}
-							else if (r_packet->seq == ACK)
-							{
-								std::string filename;
-								for (int i = 0; i < r_packet->size; i ++)
-									filename += (*(r_packet->data + i));
-								emit startWrite(QString::fromStdString(filename));
-								ACK += r_packet->size;
-							}
-						}
-
-						else if (1 == r_packet->PSH)
-						{
-							if (r_packet->seq == ACK)
-							{
-								m_eruptWrite->push_packet(r_packet);
-								//file_out.writeRawData(r_packet->data, r_packet->size);
-								//file.flush();
-								ACK += r_packet->size;
-							}
-						}
-
-						else if (1 == r_packet->FIN)
-						{
-							s_packet->seq = ACK + 1;
-							for (int i = 0; i < 5; i ++)
-							{
-								sendto(recv_socket, (char *)s_packet, sizeof(packet) + s_packet->size + 1, 0, (struct sockaddr *)addr, sizeof(*addr));
-								Sleep(5);
-							}
-
-							while (!m_eruptWrite->is_finishsed()) {}
-							m_eruptWrite->set_quit();
-							del_socket(recv_socket);
-							//net_close();
-
-							emit finished();
-							return;
-						}
-
-						break;
-
-						// V3.0
-					case 3:
-						break;
-					default:
-						break;
+				else if (1 == r_packet->PSH)
+				{
+					if (r_packet->seq == ACK)
+					{
+						m_eruptWrite->push_packet(r_packet);
+						//file_out.writeRawData(r_packet->data, r_packet->size);
+						//file.flush();
+						ACK += r_packet->size;
+						r_packet = (packet *)malloc(MAX_BUF);
+					}
 				}
 
 				s_packet->seq = ACK;
@@ -203,7 +143,115 @@ void transmit::on_run1(QString recvIp, unsigned int recvPort)
 	emit finished();
 }
 
+#define PPI std::pair<packet*, unsigned int>
+
 // 滑动窗口 接收端
 void transmit::on_run2(QString recvIp, unsigned int recvPort)
 {
+	// 建立socket
+	SOCKADDR_IN *addr = get_addr(recvIp.toStdString(), recvPort);
+	SOCKET recv_socket = get_socket(addr);
+
+	// 初始化io
+	m_eruptWrite->set_start();
+
+	packet * s_packet = make_packet(0, 0, 0, 0, 0, NULL);
+
+	// 预定义MSS的大小
+	unsigned int MSS = 2000;
+
+	// 初始化接收缓存 (最小堆)
+	struct cmp
+	{
+		bool operator()(const PPI&a, const PPI&b)
+		{
+			return a.second > b.second;
+		}
+	};
+	std::priority_queue<PPI, std::vector<PPI>, cmp> recvBuffer;
+
+	unsigned int ACK = 0;
+
+	// 假定的缓冲区大小
+	const int windSize = 20;
+
+	// 为建立连接分配缓存
+	packet * r_packet = (packet *)malloc(MAX_BUF);
+	int len = sizeof(*addr);
+	while (1)
+	{
+		Sleep(1);
+		if ((recvfrom(recv_socket, (char *)r_packet, MAX_BUF, 0, (struct sockaddr *)addr, &len)) > 0)
+		{
+			// 校验和
+			if (check_packet(r_packet))
+			{
+				// 建立连接 并且建立文件
+				if (1 == r_packet->SYN)
+				{
+					if (0 == ACK)
+					{
+						ACK = r_packet->seq + 1;
+					}
+					else if (r_packet->seq == ACK)
+					{
+						std::string filename;
+						for (int i = 0; i < r_packet->size; i ++)
+							filename += (*(r_packet->data + i));
+						emit startWrite(QString::fromStdString(filename));
+						//file.setFileName(QString::fromStdString(filename));
+						//file.open(QIODevice::WriteOnly);
+						//file_out.setDevice(&file);
+						ACK += r_packet->size;
+					}
+				}
+
+				else if (1 == r_packet->FIN)
+				{
+					s_packet->seq = ACK + 1;
+					for (int i = 0; i < 5; i ++)
+					{
+						sendto(recv_socket, (char *)s_packet, sizeof(packet) + s_packet->size + 1, 0, (struct sockaddr *)addr, sizeof(*addr));
+					}
+
+					while (!m_eruptWrite->is_finishsed()) {}
+					m_eruptWrite->set_quit();
+					del_socket(recv_socket);
+
+					//net_close();
+
+					emit finished();
+					return;
+				}
+
+				else if (1 == r_packet->PSH)
+				{
+					if (r_packet->seq >= ACK)
+					{
+						recvBuffer.push(std::make_pair(r_packet, r_packet->seq));
+						r_packet = (packet *)malloc(MAX_BUF);
+						if (recvBuffer.size() < windSize) continue;
+					}
+
+					while (!recvBuffer.empty() && recvBuffer.top().second <= ACK)
+					{
+						packet * tmp_packet = recvBuffer.top().first;
+						recvBuffer.pop();
+						if (tmp_packet->seq == ACK)
+						{
+							ACK += tmp_packet->size;
+							m_eruptWrite->push_packet(tmp_packet);
+						}
+						else
+						{
+							free(tmp_packet);
+						}
+					}
+				}
+
+				s_packet->seq = ACK;
+				sendto(recv_socket, (char *)s_packet, sizeof(packet) + s_packet->size + 1, 0, (struct sockaddr *)addr, sizeof(*addr));
+			}
+		}
+	}
 }
