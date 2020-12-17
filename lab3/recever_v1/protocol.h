@@ -17,8 +17,7 @@ typedef struct packet
 	unsigned int SYN : 1;
 	unsigned int PSH : 1;
 	unsigned int FIN : 1;
-	unsigned int OPT : 2;
-	unsigned int size : 11;
+	unsigned int size : 13;
 	unsigned int checksum : 16;
 	unsigned int seq;
 
@@ -27,4 +26,4 @@ typedef struct packet
 
 bool check_packet(packet * new_packet);
 
-packet * make_packet(unsigned int syn, unsigned int psh, unsigned int fin, unsigned int opt, unsigned int size, unsigned int seq, const char* data);
+packet * make_packet(unsigned int syn, unsigned int psh, unsigned int fin, unsigned int size, unsigned int seq, const char* data);

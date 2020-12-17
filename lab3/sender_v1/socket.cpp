@@ -17,6 +17,9 @@ bool net_init()
 SOCKET get_socket(SOCKADDR_IN *addr)
 {
 	SOCKET r_socket = socket(AF_INET, SOCK_DGRAM, 0);
+	// 设置socket为非阻塞模式
+	int iModel = 1;
+	ioctlsocket(r_socket, FIONBIO, (u_long FAR*) &iModel);
 	if (bind(r_socket, (SOCKADDR *)addr, sizeof(SOCKADDR)) < 0)
 	{
 		closesocket(r_socket);

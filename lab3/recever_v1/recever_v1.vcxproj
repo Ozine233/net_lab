@@ -86,6 +86,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="eruptWrite.cpp" />
     <ClCompile Include="protocol.cpp" />
     <ClCompile Include="socket.cpp" />
     <ClCompile Include="transmit.cpp" />
@@ -96,6 +97,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="eruptWrite.h" />
     <ClInclude Include="protocol.h" />
     <ClInclude Include="socket.h" />
     <QtMoc Include="transmit.h" />

@@ -17,10 +17,12 @@ class recever_v1 : public QWidget
 public:
 	recever_v1(QWidget *parent = Q_NULLPTR);
 	~recever_v1();
-	void start();
+	void startWait();
+	void startWindow();
 
 signals:
-	void startRunning(QString recvIp, unsigned int recvPort);
+	void startRunning1(QString recvIp, unsigned int recvPort);
+	void startRunning2(QString recvIp, unsigned int recvPort);
 
 public slots:
 	void on_finished();
@@ -34,5 +36,6 @@ private:
 	transmit *m_transmit;
 
 private slots:
-	void on_bindButton_clicked();
+	void on_waitButton_clicked();
+	void on_windowButton_clicked();
 };

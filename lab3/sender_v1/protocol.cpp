@@ -14,18 +14,24 @@ bool check_packet(packet * new_packet)
 }
 
 // 封装数据包
-packet * make_packet(unsigned int syn, unsigned int psh, unsigned int fin, unsigned int opt,
+packet * make_packet(unsigned int syn, unsigned int psh, unsigned int fin,
 	unsigned int size, unsigned int seq, const char* data)
 {
-	packet * new_packet = (packet *)malloc(sizeof packet + size + 1);
+	packet * new_packet = (packet *)malloc(sizeof(packet) + size + 1);
 	new_packet->SYN = syn;
 	new_packet->PSH = psh;
 	new_packet->FIN = fin;
-	new_packet->OPT = opt;
 	new_packet->size = size;
 	new_packet->seq = seq;
 
-	if (data != NULL)strcpy_s(new_packet->data, size + 1, data);
+	if (data != NULL)
+	{
+		for (int i = 0; i < size; i ++)
+		{
+			new_packet->data[i] = data[i];
+		}
+		new_packet->data[size] = '\0';
+	}
 
 	// 计算校验和
 	unsigned short result = 0;

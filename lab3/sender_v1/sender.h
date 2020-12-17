@@ -31,7 +31,7 @@ signals:
 
 public slots:
 	void on_receivInfo(const QString &str, unsigned int ACK);
-	void on_finished();
+	void on_finished(double time_spend);
 
 private:
 	Ui::senderClass ui;

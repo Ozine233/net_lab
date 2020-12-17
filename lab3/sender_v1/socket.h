@@ -4,7 +4,7 @@
 #include <Windows.h>
 #include <string>
 #include <memory>
-#define	MAX_BUF 3000
+#define	MAX_BUF 8000
 #define PORT unsigned short
 
 #pragma comment(lib,"ws2_32.lib")

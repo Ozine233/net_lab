@@ -4,13 +4,15 @@ recever_v1::recever_v1(QWidget *parent)
 	: QWidget(parent)
 {
 	ui.setupUi(this);
+	net_init();
 	// 初始化传送线程 并启动
 	m_transmit = new transmit();
 	m_transmit->moveToThread(&m_transmit_threa);
 	m_transmit_threa.start();
 
 	// 连接信号槽
-	connect(this, &recever_v1::startRunning, m_transmit, &transmit::on_run);
+	connect(this, &recever_v1::startRunning1, m_transmit, &transmit::on_run1);
+	connect(this, &recever_v1::startRunning2, m_transmit, &transmit::on_run2);
 
 	connect(&m_transmit_threa, &QThread::finished, m_transmit, &QObject::deleteLater);
 
@@ -26,26 +28,35 @@ recever_v1::~recever_v1()
 void recever_v1::on_finished()
 {
 	QMessageBox::information(NULL, tr("Info"), tr("Transmit Finished "));
-	QApplication* app;
-	app->exit(0);
+	ui.bindButton->setEnabled(true);
 }
 
-void recever_v1::start()
+void recever_v1::startWait()
 {
-	emit startRunning(ip, port);
+	emit startRunning1(ip, port);
 }
 
-void recever_v1::on_bindButton_clicked()
+void recever_v1::startWindow()
+{
+	emit startRunning2(ip, port);
+}
+
+void recever_v1::on_waitButton_clicked()
 {
 	ui.bindButton->setDisabled(true);
-	QApplication* app;
-	if (!net_init())
-	{
-		QMessageBox::information(NULL, tr("Info"), tr("socket open failed! "));
-		app->exit(0);
-	}
+
 	ip = ui.ip->text();
 	port = ui.port->text().toShort();
 
-	start();
+	startWait();
+}
+
+void recever_v1::on_windowButton_clicked()
+{
+	ui.bindButton->setDisabled(true);
+
+	ip = ui.ip->text();
+	port = ui.port->text().toShort();
+
+	startWindow();
 }

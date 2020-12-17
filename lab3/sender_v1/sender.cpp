@@ -83,14 +83,16 @@ void sender::startV3()
 void sender::on_receivInfo(const QString &str, unsigned int ACK)
 {
 	ui.log->append(str);
-	ui.progressBar->setValue(ACK);
+	if (ACK > ui.progressBar->value()) ui.progressBar->setValue(ACK);
 }
 
-void sender::on_finished()
+void sender::on_finished(double time_spend)
 {
 	ui.log->append(tr("[INFO] Transmit Finished!"));
-	enableAllButton();
+	ui.log->append(tr("[INFO] time used: ") + QString::number(time_spend) + tr(" s"));
+	ui.log->append(tr("[INFO] average speed: ") + QString::number((fileinfo.size() * 8) / (time_spend * 1000.0)) + tr(" Kbps"));
 	ui.progressBar->setValue(fileinfo.size());
+	enableAllButton();
 }
 
 void sender::on_v1Button_clicked()

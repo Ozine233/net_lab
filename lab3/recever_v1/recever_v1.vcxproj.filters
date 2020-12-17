@@ -50,6 +50,9 @@
     <ClCompile Include="transmit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="eruptWrite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="socket.h">
@@ -61,6 +64,9 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="transmit.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="eruptWrite.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

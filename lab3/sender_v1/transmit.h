@@ -1,10 +1,8 @@
 #pragma once
 #include <QObject>
-#include <QFileInfo>
 #include <QDataStream>
 #include "binaryIO.h"
 #include "socket.h"
-#include <fstream>
 
 class transmit : public QObject
 {
@@ -15,7 +13,7 @@ public:
 
 signals:
 	void infoReady(const QString &str, unsigned int ACK);
-	void finished();
+	void finished(double time_spend);
 
 public slots:
 	void on_runV1(QString sendIp, unsigned int sendPort, QString recvIp, unsigned int recvPort, QString filepath);
@@ -24,8 +22,6 @@ public slots:
 
 private:
 	binaryIO fileIO;
-	QFileInfo fileinfo;
-	QString filepath;
 	QString sendIp;
 	unsigned short sendPort;
 	QString recvIp;
